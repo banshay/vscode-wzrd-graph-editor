@@ -2,7 +2,11 @@
   "name": "vscode-wzrd-graph-editor",
   "displayName": "vscode-wzrd-graph-editor",
   "description": "",
-  "version": "0.0.1",
+  "version": "0.0.5",
+  "publisher": "wzrd-graph",
+  "repository": {
+    "url": "https://github.com/banshay/vscode-wzrd-graph-editor"
+  },
   "engines": {
     "vscode": "^1.78.0"
   },
@@ -12,6 +16,7 @@
   "activationEvents": [
   ],
   "main": "./dist/extension.js",
+  "browser": "./dist/extension.js",
   "contributes": {
     "commands": [
       {
@@ -50,7 +55,7 @@
     "@types/node": "16.x",
     "@typescript-eslint/eslint-plugin": "^5.59.1",
     "@typescript-eslint/parser": "^5.59.1",
-    "@banshay/graph-editor": "latest",
+    "@banshay/graph-editor": "file:../graph_editor/graph_editor",
     "eslint": "^8.39.0",
     "glob": "^8.1.0",
     "mocha": "^10.2.0",
