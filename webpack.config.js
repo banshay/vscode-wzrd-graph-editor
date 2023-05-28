@@ -4,6 +4,22 @@
 
 const path = require('path');
 const webpack = require('webpack');
+const CopyPlugin = require('copy-webpack-plugin');
+
+function copyWzrdGraphFiles() {
+  return new CopyPlugin({
+    patterns: [{
+      from: "node_modules/@banshay/graph-editor/dist/sw.js",
+      to: "lib/sw.js"
+    }, {
+      from: "node_modules/@banshay/graph-editor/dist/graph_editor_bg.wasm",
+      to: "lib/graph_editor_bg.wasm"
+    }, {
+      from: "node_modules/@banshay/graph-editor/dist/graph_editor.js",
+      to: "lib/graph_editor.js"
+    }],
+  })
+}
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -50,6 +66,7 @@ const webConfig = /** @type WebpackConfig */ {
     new webpack.ProvidePlugin({
       process: "process/browser", // provide a shim for the global `process` variable
     }),
+    copyWzrdGraphFiles(),
   ],
   externals: {
     vscode: "commonjs vscode", // ignored because it doesn't exist
@@ -63,7 +80,7 @@ const webConfig = /** @type WebpackConfig */ {
 /** @type WebpackConfig */
 const nodeConfig = {
   target: 'node', // VS Code extensions run in a Node.js-context 📖 -> https://webpack.js.org/configuration/node/
-	mode: 'none', // this leaves the source code as close as possible to the original (when packaging we set this to 'production')
+  mode: 'none', // this leaves the source code as close as possible to the original (when packaging we set this to 'production')
 
   entry: './src/extension.ts', // the entry point of this extension, 📖 -> https://webpack.js.org/configuration/entry-context/
   output: {
@@ -97,5 +114,8 @@ const nodeConfig = {
   infrastructureLogging: {
     level: "log", // enables logging required for problem matchers
   },
+  plugins: [
+    copyWzrdGraphFiles(),
+  ]
 };
-module.exports = [ webConfig, nodeConfig ];
+module.exports = [webConfig, nodeConfig];

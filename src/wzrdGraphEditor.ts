@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import {CancellationToken, TextDocument, WebviewPanel} from "vscode";
 import {randomUUID} from "crypto";
+import {getNonce} from "./util";
 
 
 export class WzrdGraphEditorProvider implements vscode.CustomTextEditorProvider {
@@ -17,16 +18,19 @@ export class WzrdGraphEditorProvider implements vscode.CustomTextEditorProvider 
 
   resolveCustomTextEditor(document: TextDocument, webviewPanel: WebviewPanel, token: CancellationToken): Thenable<void> | void {
     webviewPanel.webview.options = {
-      enableScripts: true
+      enableScripts: true,
+      localResourceRoots: [
+        vscode.Uri.joinPath(this.context.extensionUri, "dist", "lib")
+      ]
     }
 
     webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
 
     webviewPanel.webview.onDidReceiveMessage(e => {
-      switch (e.type){
+      switch (e.type) {
         case 'updateDocument':
           const edit = new vscode.WorkspaceEdit();
-          edit.replace(document.uri, new vscode.Range(0,0,document.lineCount, 0), e.data);
+          edit.replace(document.uri, new vscode.Range(0, 0, document.lineCount, 0), e.data);
           vscode.workspace.applyEdit(edit);
           return;
       }
@@ -35,10 +39,11 @@ export class WzrdGraphEditorProvider implements vscode.CustomTextEditorProvider 
   }
 
   private getHtmlForWebview(webview: vscode.Webview): string {
-    const swUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "node_modules", "@banshay/graph-editor", "dist", "sw.js"))
-    const wasmUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "node_modules", "@banshay/graph-editor" ,"dist", "graph_editor_bg.wasm"))
-    const wasmJsUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "node_modules", "@banshay/graph-editor", "dist", "graph_editor.js"))
+    const swUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "dist", "lib", "sw.js"))
+    const wasmUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "dist", "lib", "graph_editor_bg.wasm"))
+    const wasmJsUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "dist", "lib", "graph_editor.js"))
 
+    const nonce = getNonce();
 
     return /* html*/`
 <!DOCTYPE html>
@@ -50,23 +55,30 @@ export class WzrdGraphEditorProvider implements vscode.CustomTextEditorProvider 
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-${nonce}'; script-src 'nonce-${nonce}' 'unsafe-eval'; connect-src https:; script-src-elem 'nonce-${nonce}' https:;">
   <!-- change this to your project name -->
   <title>Wzrd Graph Editor</title>
 
   <!-- config for our rust wasm binary. go to https://trunkrs.dev/assets/#rust for more customization -->
-  <script type="importmap">
+  <script nonce="${nonce}" type="importmap">
     {
       "imports": {
         "wasmJs": "${wasmJsUri}"
       }
     }
-
   </script>
-  <script type="module">
+  <script nonce="${nonce}" type="module">
     import init from "wasmJs";
 
     init('${wasmUri}');
   </script>
+  <!--
+  <script type="module" nonce="${nonce}">
+    import init from "${wasmJsUri}";
+
+    init('${wasmUri}');
+  </script>
+  -->
   <!-- this is the base url relative to which other urls will be constructed. trunk will insert this from the public-url option -->
   <base href="/">
 
@@ -85,7 +97,7 @@ export class WzrdGraphEditorProvider implements vscode.CustomTextEditorProvider 
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="white">
   <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#404040">
 
-  <style>
+  <style nonce="${nonce}">
     html {
       /* Remove touch delay: */
       touch-action: manipulation;
@@ -183,7 +195,7 @@ export class WzrdGraphEditorProvider implements vscode.CustomTextEditorProvider 
 
 <!--Register Service Worker. this will cache the wasm / js scripts for offline use (for PWA functionality). -->
 <!-- Force refresh (Ctrl + F5) to load the latest files instead of cached files  -->
-<script>
+<script nonce="${nonce}">
   const vscode = acquireVsCodeApi();
 
   function updateDocument(str) {
