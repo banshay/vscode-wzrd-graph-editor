@@ -24,7 +24,7 @@ export class WzrdGraphEditorProvider implements vscode.CustomTextEditorProvider 
       ]
     }
 
-    webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview);
+    webviewPanel.webview.html = this.getHtmlForWebview(webviewPanel.webview, document.getText());
 
     webviewPanel.webview.onDidReceiveMessage(e => {
       switch (e.type) {
@@ -38,12 +38,18 @@ export class WzrdGraphEditorProvider implements vscode.CustomTextEditorProvider 
 
   }
 
-  private getHtmlForWebview(webview: vscode.Webview): string {
+  private getHtmlForWebview(webview: vscode.Webview, fileContents: string): string {
     const swUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "dist", "lib", "sw.js"))
     const wasmUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "dist", "lib", "graph_editor_bg.wasm"))
     const wasmJsUri = webview.asWebviewUri(vscode.Uri.joinPath(this.context.extensionUri, "dist", "lib", "graph_editor.js"))
 
     const nonce = getNonce();
+
+    const fileContentFunction = `
+    function getFileContents(){
+      return \`${fileContents}\`
+    }
+    `
 
     return /* html*/`
 <!DOCTYPE html>
@@ -202,8 +208,10 @@ export class WzrdGraphEditorProvider implements vscode.CustomTextEditorProvider 
     vscode.postMessage({
       type: 'updateDocument',
       data: str
-    })
+    });
   }
+  
+  ${fileContentFunction}
 
   // We disable caching during development so that we always view the latest version.
   if ('serviceWorker' in navigator && window.location.hash !== "#dev") {
