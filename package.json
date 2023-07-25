@@ -2,7 +2,7 @@
   "name": "vscode-wzrd-graph-editor",
   "displayName": "vscode-wzrd-graph-editor",
   "description": "",
-  "version": "0.0.16",
+  "version": "0.0.18",
   "publisher": "wzrd-graph",
   "repository": {
     "url": "https://github.com/banshay/vscode-wzrd-graph-editor"
